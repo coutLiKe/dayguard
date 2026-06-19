@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kevinlin.dayguard.menubar</string>
+
+  <!-- __PROJECT_DIR__ / __VENV_DIR__ are placeholders substituted by
+       `dayguardctl install` with this machine's real paths. -->
+  <key>WorkingDirectory</key>
+  <string>__PROJECT_DIR__</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__VENV_DIR__/bin/python3</string>
+    <string>__PROJECT_DIR__/menubar.py</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <!-- Only restart on crash, not on clean exit. -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <!-- Menu bar apps need this so they can attach to the user's GUI session -->
+  <key>ProcessType</key>
+  <string>Interactive</string>
+
+  <key>StandardOutPath</key>
+  <string>__PROJECT_DIR__/logs/menubar.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__PROJECT_DIR__/logs/menubar.err.log</string>
+</dict>
+</plist>

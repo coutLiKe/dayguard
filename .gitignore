@@ -1,0 +1,21 @@
+# Personal/local config — ship config.example.json, keep your real one local
+config.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Runtime caches & state (regenerated on every run, not source)
+.cve_cache.json
+.macos_cache.json
+.menubar_state.json
+.brief_cache.json
+dayguard.db
+
+# Logs (operational output, not source — keep the directory via .gitkeep)
+logs/*.log
+
+# macOS
+.DS_Store

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DayGuard</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --border: rgba(60,60,67,0.12);
+      --border-strong: rgba(60,60,67,0.2);
+      --text: #1d1d1f;
+      --text-2: #6e6e73;
+      --text-3: #8e8e93;
+      --ok-bg: #e3f7e8;     --ok-fg: #15803d;
+      --warn-bg: #fff4d6;   --warn-fg: #a16207;
+      --crit-bg: #ffe0e0;   --crit-fg: #b91c1c;
+      --info-bg: #e6f0ff;   --info-fg: #1d4ed8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --surface: #2c2c2e;
+        --border: rgba(255,255,255,0.10);
+        --border-strong: rgba(255,255,255,0.18);
+        --text: #f5f5f7;
+        --text-2: #aeaeb2;
+        --text-3: #8e8e93;
+        --ok-bg: rgba(48,209,88,0.16);   --ok-fg: #5be384;
+        --warn-bg: rgba(255,214,10,0.18); --warn-fg: #ffd60a;
+        --crit-bg: rgba(255,69,58,0.18);  --crit-fg: #ff7a72;
+        --info-bg: rgba(10,132,255,0.18); --info-fg: #6eb1ff;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 22px 22px 32px; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--info-bg); color: var(--info-fg); display:flex; align-items:center; justify-content:center; font-size: 18px; }
+    .surface { background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; transition: background 120ms; }
+    .row:hover { background: rgba(120,120,128,0.08); }
+    .row .chev { transition: transform 200ms ease; color: var(--text-3); display:inline-flex; align-items:center; }
+    .row .chev svg { width: 14px; height: 14px; }
+    .inline-icon { display:inline-flex; align-items:center; justify-content:center; vertical-align:-2px; margin-right:6px; }
+    .inline-icon svg { width:14px; height:14px; }
+    .row.open { background: rgba(120,120,128,0.06); }
+    .row.open .chev { transform: rotate(90deg); }
+    .divider { height: 0.5px; background: var(--border); margin-left: 54px; }
+    .icon-tile { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .icon-tile svg { width: 60%; height: 60%; }
+    .brand-icon svg { width: 18px; height: 18px; }
+    .pill { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .pill-ok { background: var(--ok-bg); color: var(--ok-fg); }
+    .pill-warn { background: var(--warn-bg); color: var(--warn-fg); }
+    .pill-critical { background: var(--crit-bg); color: var(--crit-fg); }
+    .section-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; padding: 18px 4px 8px; }
+    .detail { padding: 0 16px 13px 54px; font-size: 13px; color: var(--text-2); display: none; }
+    .row.open + .detail { display: block; }
+    .detail .item { padding: 7px 0; border-top: 0.5px solid var(--border); display: flex; justify-content: space-between; gap: 12px; }
+    .detail .item:first-child { border-top: 0; padding-top: 2px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-size: 11px; }
+    .btn { font-size: 12px; padding: 5px 11px; border-radius: 7px; background: var(--surface); border: 0.5px solid var(--border-strong); color: var(--text); cursor: pointer; transition: background 120ms; }
+    .btn:hover { background: rgba(120,120,128,0.12); }
+    .muted { color: var(--text-2); }
+    .muted-3 { color: var(--text-3); }
+    a { color: var(--info-fg); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div style="font-size:16px; font-weight:600;">DayGuard</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="last-updated" class="muted-3" style="font-size:11px;">—</span>
+        <button id="refresh" class="btn">Refresh</button>
+      </div>
+    </header>
+
+    <section id="brief" class="surface" style="padding: 16px 18px; margin-bottom: 10px;"></section>
+    <section id="hero" class="surface" style="padding: 18px 20px; margin-bottom: 8px;"></section>
+    <main id="sections"></main>
+
+    <footer class="muted-3" style="text-align:center; font-size:11px; padding:24px 0;">
+      v0.3.2
+    </footer>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

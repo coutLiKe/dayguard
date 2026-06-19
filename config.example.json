@@ -1,0 +1,17 @@
+{
+  "domains": [
+    "example.com",
+    "example.com/some-path"
+  ],
+  "known_devices": [
+    {"mac": "aa:bb:cc:dd:ee:ff", "name": "Kevin's MacBook"},
+    {"mac": "11:22:33:44:55:66", "name": "Windows PC"}
+  ],
+  "home_gateway_macs": ["aa:bb:cc:dd:ee:01"],
+
+  "cve_keywords": ["python", "docker", "fastapi", "macos", "openssl", "nodejs"],
+  "cve_min_cvss": 7.0,
+
+  "ollama_url": "http://localhost:11434",
+  "ollama_model": "llama3.2:3b"
+}

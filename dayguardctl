@@ -1,0 +1,107 @@
+#!/bin/bash
+# dayguardctl — one command to manage DayGuard.
+#
+#   ./dayguardctl install    install/refresh LaunchAgents and start everything
+#   ./dayguardctl restart    restart backend + menubar
+#   ./dayguardctl status     show service status and whether the API answers
+#   ./dayguardctl logs       tail the backend + menubar logs
+#   ./dayguardctl stop       stop and unload both services
+#   ./dayguardctl doctor     full health check with diagnosis
+
+set -u
+DIR="$(cd "$(dirname "$0")" && pwd)"
+AGENTS="$HOME/Library/LaunchAgents"
+BACKEND="com.kevinlin.dayguard"
+MENUBAR="com.kevinlin.dayguard.menubar"
+URL="http://127.0.0.1:8765"
+UID_N="$(id -u)"
+# venv lives OUTSIDE ~/Documents — iCloud Drive evicts file contents there,
+# which crashes launchd-spawned Python with "Resource deadlock avoided".
+VENV="$HOME/Library/Application Support/DayGuard/venv"
+
+mkdir -p "$DIR/logs"
+
+_materialize() {
+  # Force iCloud to download any evicted project files (cat reads them all).
+  find "$DIR/app" "$DIR/launchd" -type f -exec cat {} + >/dev/null 2>&1
+  cat "$DIR/menubar.py" "$DIR/config.json" >/dev/null 2>&1
+}
+
+_ensure_venv() {
+  if [ ! -x "$VENV/bin/python3" ]; then
+    echo "Creating venv at $VENV ..."
+    mkdir -p "$(dirname "$VENV")"
+    python3 -m venv "$VENV" || { echo "venv creation failed"; exit 1; }
+    "$VENV/bin/pip" install --quiet --upgrade pip
+  fi
+  "$VENV/bin/pip" install --quiet -r "$DIR/requirements.txt" || { echo "pip install failed"; exit 1; }
+}
+
+_bootout() {  # quiet unload, old and new launchctl syntax
+  launchctl bootout "gui/$UID_N/$1" 2>/dev/null || launchctl unload "$AGENTS/$1.plist" 2>/dev/null || true
+}
+
+_bootstrap() {
+  launchctl bootstrap "gui/$UID_N" "$AGENTS/$1.plist" 2>/dev/null || launchctl load "$AGENTS/$1.plist"
+}
+
+case "${1:-status}" in
+  install)
+    _ensure_venv
+    _materialize
+    # Kill any stray manually-started server holding the port
+    PIDS=$(lsof -ti :8765 2>/dev/null || true)
+    [ -n "$PIDS" ] && echo "Killing stray process(es) on :8765 ($PIDS)" && kill $PIDS && sleep 1
+    _bootout "$BACKEND"; _bootout "$MENUBAR"
+    # The repo's plist templates use __PROJECT_DIR__ / __VENV_DIR__ placeholders
+    # instead of a hardcoded path, so the source files never contain a real
+    # username. Substitute this machine's actual paths when installing.
+    sed "s|__PROJECT_DIR__|$DIR|g; s|__VENV_DIR__|$VENV|g" "$DIR/launchd/$BACKEND.plist" > "$AGENTS/$BACKEND.plist"
+    sed "s|__PROJECT_DIR__|$DIR|g; s|__VENV_DIR__|$VENV|g" "$DIR/launchd/$MENUBAR.plist" > "$AGENTS/$MENUBAR.plist"
+    _bootstrap "$BACKEND"; _bootstrap "$MENUBAR"
+    echo "Installed. Waiting for backend..."
+    for i in $(seq 1 20); do
+      sleep 1
+      curl -sf "$URL/api/health" >/dev/null 2>&1 && echo "Backend is UP → $URL" && exit 0
+    done
+    echo "Backend did not come up in 20s. Run: ./dayguardctl doctor"
+    exit 1
+    ;;
+  restart)
+    _materialize
+    launchctl kickstart -k "gui/$UID_N/$BACKEND"
+    launchctl kickstart -k "gui/$UID_N/$MENUBAR" 2>/dev/null || true
+    sleep 2
+    curl -sf "$URL/api/health" >/dev/null 2>&1 && echo "Backend is UP → $URL" || echo "Backend still down. Run: ./dayguardctl doctor"
+    ;;
+  status)
+    echo "--- launchctl ---"
+    launchctl list | grep dayguard || echo "(no dayguard services loaded)"
+    echo "--- api ---"
+    curl -sf "$URL/api/health" && echo " ← API healthy" || echo "API NOT responding on $URL"
+    ;;
+  logs)
+    tail -n 40 "$DIR/logs/dayguard.err.log" "$DIR/logs/dayguard.out.log" "$DIR/logs/menubar.err.log" 2>/dev/null
+    ;;
+  stop)
+    _bootout "$BACKEND"; _bootout "$MENUBAR"
+    echo "Stopped."
+    ;;
+  doctor)
+    echo "1) Services loaded?"
+    launchctl list | grep dayguard || echo "   NOT LOADED → run: ./dayguardctl install"
+    echo "2) Port 8765 holder:"
+    lsof -i :8765 2>/dev/null | tail -n +1 || echo "   nothing listening on 8765"
+    echo "3) API health:"
+    curl -sf "$URL/api/health" && echo " ← OK" || echo "   API down"
+    echo "4) venv python ($VENV):"
+    ls -la "$VENV/bin/python3" 2>/dev/null || echo "   MISSING venv → run: ./dayguardctl install"
+    echo "5) Import test (catches code errors):"
+    cd "$DIR" && "$VENV/bin/python3" -c "import app.main; print('   import OK')" || echo "   IMPORT FAILED — traceback above is the bug"
+    echo "6) Last 20 lines of backend error log:"
+    tail -n 20 "$DIR/logs/dayguard.err.log" 2>/dev/null || echo "   (no log yet)"
+    ;;
+  *)
+    echo "usage: ./dayguardctl {install|restart|status|logs|stop|doctor}"
+    ;;
+esac
