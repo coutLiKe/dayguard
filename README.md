@@ -43,13 +43,15 @@ ollama serve              # leave running in a tab, or set up a launchd plist
 "$HOME/Library/Application Support/DayGuard/venv/bin/python3" -m uvicorn app.main:app --host 127.0.0.1 --port 8765
 ```
 
-> **Why the venv lives in `~/Library`:** this project sits in `~/Documents`,
-> which iCloud Drive syncs and may evict ("optimize") file contents. Evicted
-> files crash launchd-spawned Python with `Resource deadlock avoided`. The
-> venv therefore lives at `~/Library/Application Support/DayGuard/venv`,
-> which iCloud never touches. `dayguardctl` also re-downloads any evicted
-> code files before each start. Tip: in Finder, right-click the `dayguard`
-> folder → **Keep Downloaded** to prevent eviction entirely.
+> **Keep the project out of iCloud Drive.** Do **not** put DayGuard in
+> `~/Documents` or `~/Desktop` — iCloud syncs those folders and "optimizes"
+> (evicts) file contents to the cloud. At login, `launchd` then starts the
+> backend before iCloud has re-downloaded the code, and Python crashes on
+> import with `OSError: [Errno 11] Resource deadlock avoided` — so the app
+> silently fails to start after every restart. Keep the repo somewhere iCloud
+> never touches, e.g. `~/dayguard`. The venv lives outside the project at
+> `~/Library/Application Support/DayGuard/venv` for the same reason — never
+> move it back into the project folder.
 
 Open http://localhost:8765 to see the dashboard.
 
