@@ -8,6 +8,7 @@ on a public LAN, and that's not *your* security problem.
 """
 import re
 import subprocess
+import sys
 from ..config import CONFIG
 from .device_id import (
     resolve_hostnames, vendor_for_mac, is_randomized_mac, is_multicast_mac,
@@ -23,19 +24,29 @@ def _normalize_mac(mac: str) -> str:
     return ":".join(p.zfill(2) for p in mac.lower().split(":"))
 
 
+_BENIGN_ROUTE_STDERR = "writing to routing socket: not in table"
+
+
 def _default_gateway_ip() -> str | None:
     # `route -n get default` sometimes writes an informational
     # "route: writing to routing socket: not in table" line to stderr even
     # when it succeeds. subprocess.check_output leaves stderr attached to
     # our own process, so under launchd that line was landing straight in
     # logs/dayguard.err.log on every network-panel refresh. It's benign —
-    # stdout still has the gateway info we need — so we just discard it.
+    # stdout still has the gateway info we need — so we filter just that
+    # line out and let anything else through, so a real failure is still
+    # visible in the log instead of vanishing silently.
     try:
-        out = subprocess.check_output(["route", "-n", "get", "default"],
-                                      text=True, timeout=5,
-                                      stderr=subprocess.DEVNULL)
+        result = subprocess.run(["route", "-n", "get", "default"],
+                                 text=True, timeout=5,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 check=True)
     except Exception:
         return None
+    for err_line in result.stderr.splitlines():
+        if _BENIGN_ROUTE_STDERR not in err_line:
+            print(err_line, file=sys.stderr)
+    out = result.stdout
     for line in out.splitlines():
         line = line.strip()
         if line.startswith("gateway:"):
