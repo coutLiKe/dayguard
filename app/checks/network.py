@@ -24,9 +24,16 @@ def _normalize_mac(mac: str) -> str:
 
 
 def _default_gateway_ip() -> str | None:
+    # `route -n get default` sometimes writes an informational
+    # "route: writing to routing socket: not in table" line to stderr even
+    # when it succeeds. subprocess.check_output leaves stderr attached to
+    # our own process, so under launchd that line was landing straight in
+    # logs/dayguard.err.log on every network-panel refresh. It's benign —
+    # stdout still has the gateway info we need — so we just discard it.
     try:
         out = subprocess.check_output(["route", "-n", "get", "default"],
-                                      text=True, timeout=5)
+                                      text=True, timeout=5,
+                                      stderr=subprocess.DEVNULL)
     except Exception:
         return None
     for line in out.splitlines():
