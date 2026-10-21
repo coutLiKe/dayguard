@@ -23,7 +23,7 @@ SUMMARY_URL = f"{DASHBOARD_URL}/api/summary"
 HEALTH_URL = f"{DASHBOARD_URL}/api/health"
 POLL_INTERVAL_SEC = 5 * 60
 STATE_PATH = Path(__file__).parent / ".menubar_state.json"
-BACKEND_LABEL = "com.kevinlin.dayguard"
+BACKEND_LABEL = "com.dayguard.backend"  # must match dayguardctl's BACKEND=
 # Don't auto-restart the backend more often than this (seconds)
 RESTART_COOLDOWN_SEC = 60
 

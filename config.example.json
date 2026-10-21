@@ -4,7 +4,7 @@
     "example.com/some-path"
   ],
   "known_devices": [
-    {"mac": "aa:bb:cc:dd:ee:ff", "name": "Kevin's MacBook"},
+    {"mac": "aa:bb:cc:dd:ee:ff", "name": "My MacBook"},
     {"mac": "11:22:33:44:55:66", "name": "Windows PC"}
   ],
   "home_gateway_macs": ["aa:bb:cc:dd:ee:01"],

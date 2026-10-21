@@ -4,7 +4,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.kevinlin.dayguard.menubar</string>
+  <string>com.dayguard.menubar</string>
 
   <!-- __PROJECT_DIR__ / __VENV_DIR__ are placeholders substituted by
        `dayguardctl install` with this machine's real paths. -->

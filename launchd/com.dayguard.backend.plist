@@ -4,7 +4,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.kevinlin.dayguard</string>
+  <string>com.dayguard.backend</string>
 
   <!-- IMPORTANT: Edit these two paths to match your install location -->
   <key>WorkingDirectory</key>

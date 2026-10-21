@@ -11,8 +11,13 @@
 set -u
 DIR="$(cd "$(dirname "$0")" && pwd)"
 AGENTS="$HOME/Library/LaunchAgents"
-BACKEND="com.kevinlin.dayguard"
-MENUBAR="com.kevinlin.dayguard.menubar"
+BACKEND="com.dayguard.backend"
+MENUBAR="com.dayguard.menubar"
+# Pre-rename labels. Only used by `install` to clean up an existing install
+# from before DayGuard dropped the original author's name from these IDs —
+# harmless no-op once a machine has migrated.
+LEGACY_BACKEND="com.kevinlin.dayguard"
+LEGACY_MENUBAR="com.kevinlin.dayguard.menubar"
 URL="http://127.0.0.1:8765"
 UID_N="$(id -u)"
 # venv lives OUTSIDE ~/Documents — iCloud Drive evicts file contents there,
@@ -53,6 +58,13 @@ case "${1:-status}" in
     PIDS=$(lsof -ti :8765 2>/dev/null || true)
     [ -n "$PIDS" ] && echo "Killing stray process(es) on :8765 ($PIDS)" && kill $PIDS && sleep 1
     _bootout "$BACKEND"; _bootout "$MENUBAR"
+    # One-time migration: unload and remove any LaunchAgents installed under
+    # the old pre-rename labels so this machine doesn't end up running both
+    # the old and new jobs side by side on the same port.
+    if [ "$LEGACY_BACKEND" != "$BACKEND" ]; then
+      _bootout "$LEGACY_BACKEND"; _bootout "$LEGACY_MENUBAR"
+      rm -f "$AGENTS/$LEGACY_BACKEND.plist" "$AGENTS/$LEGACY_MENUBAR.plist"
+    fi
     # The repo's plist templates use __PROJECT_DIR__ / __VENV_DIR__ placeholders
     # instead of a hardcoded path, so the source files never contain a real
     # username. Substitute this machine's actual paths when installing.
